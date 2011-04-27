@@ -22,13 +22,11 @@ module Puret
 
         attributes.each do |attribute|
           # attribute setter
+
           define_method "#{attribute}=" do |value|
-            if I18n.locale != I18n.default_locale
-              puret_attributes[I18n.locale][attribute] = value
-            else
-              self[attribute] = value
-            end
+            puret_attributes[I18n.locale][attribute] = value
           end
+
 
           # attribute getter
           define_method attribute do
@@ -41,8 +39,7 @@ module Puret
             # use default locale, if present.
             # Otherwise use first translation
             translation = translations.detect { |t| t.locale.to_sym == I18n.locale && t[attribute] } ||
-              translations.detect { |t| t.locale.to_sym == puret_default_locale && t[attribute] } ||
-              translations.first
+                          translations.detect { |t| t.locale.to_sym == I18n.default_locale && t[attribute] }
 
             translation.blank? ? self[attribute] : translation[attribute]
           end
@@ -57,30 +54,42 @@ module Puret
 
         has_many :translations, :class_name => "#{self.to_s}Translation", :dependent => :destroy, :order => "created_at DESC"
         after_save :update_translations!
+        #before_save :update_real_data!
       end
     end
 
     module InstanceMethods
+=begin
       def puret_default_locale
         return default_locale.to_sym if respond_to?(:default_locale)
         return self.class.default_locale.to_sym if self.class.respond_to?(:default_locale)
         I18n.default_locale
       end
-
+=end
       # attributes are stored in @puret_attributes instance variable via setter
       def puret_attributes
         @puret_attributes ||= Hash.new { |hash, key| hash[key] = {} }
       end
+      def update_real_data!
+        return if puret_attributes.blank?
 
+        tmp = puret_attributes[I18n.default_locale]
+        tmp.delete(:locale)
+        self.update_attributes(tmp)
+        self.save!
+      end
       # called after save
       def update_translations!
         return if puret_attributes.blank?
-        puret_attributes.each do |locale, attributes|
-          translation = translations.find_or_initialize_by_locale(locale.to_s)
-          translation.attributes = translation.attributes.merge(attributes)
-          translation.save!
+        if I18n.locale != I18n.default_locale
+          puret_attributes.each do |locale, attributes|
+            translation = translations.find_or_initialize_by_locale(locale.to_s)
+            translation.attributes = translation.attributes.merge(attributes)
+            translation.save!
+          end
         end
       end
+
     end
   end
 end
