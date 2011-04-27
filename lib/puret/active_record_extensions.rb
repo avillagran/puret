@@ -1,6 +1,7 @@
 module Puret
   module ActiveRecordExtensions
     module ClassMethods
+
       # Configure translation model dependency.
       # Eg:
       #   class PostTranslation < ActiveRecord::Base
@@ -30,19 +31,9 @@ module Puret
 
           # attribute getter
           define_method attribute do
-            # return previously setted attributes if present
-            return puret_attributes[I18n.locale][attribute] if puret_attributes[I18n.locale][attribute]
-            return if new_record?
-
-            # Lookup chain:
-            # if translation not present in current locale,
-            # use default locale, if present.
-            # Otherwise use first translation
-            translation = translations.detect { |t| t.locale.to_sym == I18n.locale && t[attribute] } ||
-                          translations.detect { |t| t.locale.to_sym == I18n.default_locale && t[attribute] }
-
-            translation.blank? ? self[attribute] : translation[attribute]
+            get_value attribute
           end
+
         end
       end
 
@@ -70,6 +61,22 @@ module Puret
       def puret_attributes
         @puret_attributes ||= Hash.new { |hash, key| hash[key] = {} }
       end
+
+      def get_value attribute
+        # return previously setted attributes if present
+        return puret_attributes[I18n.locale][attribute] if puret_attributes[I18n.locale][attribute]
+        return if new_record?
+
+        # Lookup chain:
+        # if translation not present in current locale,
+        # use default locale, if present.
+        # Otherwise use first translation
+        translation = translations.detect { |t| t.locale.to_sym == I18n.locale && t[attribute] } ||
+                      translations.detect { |t| t.locale.to_sym == I18n.default_locale && t[attribute] }
+
+        translation.blank? ? self[attribute] : translation[attribute]
+      end
+
       def update_real_data!
         return if puret_attributes.blank?
 
@@ -81,12 +88,11 @@ module Puret
       # called after save
       def update_translations!
         return if puret_attributes.blank?
-        if I18n.locale != I18n.default_locale
-          puret_attributes.each do |locale, attributes|
-            translation = translations.find_or_initialize_by_locale(locale.to_s)
-            translation.attributes = translation.attributes.merge(attributes)
-            translation.save!
-          end
+
+        puret_attributes.each do |locale, attributes|
+          translation = translations.find_or_initialize_by_locale(locale.to_s)
+          translation.attributes = translation.attributes.merge(attributes)
+          translation.save!
         end
       end
 
