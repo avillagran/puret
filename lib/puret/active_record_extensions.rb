@@ -40,7 +40,7 @@ module Puret
               translations.detect { |t| t.locale.to_sym == puret_default_locale && t[attribute] } ||
               translations.first
 
-            translation ? translation[attribute] : self[attribute]
+            translation.blank? ? self[attribute] : translation[attribute]
           end
         end
       end
