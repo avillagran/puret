@@ -23,7 +23,11 @@ module Puret
         attributes.each do |attribute|
           # attribute setter
           define_method "#{attribute}=" do |value|
-            puret_attributes[I18n.locale][attribute] = value
+            if I18n.locale != I18n.default_locale
+              puret_attributes[I18n.locale][attribute] = value
+            else
+              self[attribute] = value
+            end
           end
 
           # attribute getter
