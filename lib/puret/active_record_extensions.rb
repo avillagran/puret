@@ -81,14 +81,14 @@ module Puret
         t_locale = t_locale[attribute]
         t_default= t_default[attribute]
 
-        if t_locale.blank?
-          if t_default.blank?
+        if t_locale.nil? || t_locale[attribute].blank?
+          if t_default.nil? || t_default[attribute].blank?
             return self[attribute]
           else
-            return t_default
+            return t_default[attribute]
           end
         else
-          return t_locale
+          return t_locale[attribute]
         end
       end
 
