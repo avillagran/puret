@@ -78,8 +78,6 @@ module Puret
         if t_locale.nil? && t_default.nil?
           return self[attribute]
         end
-        t_locale = t_locale[attribute]
-        t_default= t_default[attribute]
 
         if t_locale.nil? || t_locale[attribute].blank?
           if t_default.nil? || t_default[attribute].blank?
