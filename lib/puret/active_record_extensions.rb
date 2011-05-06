@@ -64,17 +64,32 @@ module Puret
 
       def get_value attribute
         # return previously setted attributes if present
-        return puret_attributes[I18n.locale][attribute] if puret_attributes[I18n.locale][attribute]
+        return puret_attributes[I18n.locale][attribute] if !puret_attributes[I18n.locale][attribute].blank?
         return if new_record?
 
         # Lookup chain:
         # if translation not present in current locale,
         # use default locale, if present.
         # Otherwise use first translation
-        translation = translations.detect { |t| t.locale.to_sym == I18n.locale && t[attribute] } ||
-                      translations.detect { |t| t.locale.to_sym == I18n.default_locale && t[attribute] }
 
-        translation.blank? ? self[attribute] : translation[attribute]
+        t_locale = translations.detect { |t| t.locale.to_sym == I18n.locale && t[attribute] }
+        t_default= translations.detect { |t| t.locale.to_sym == I18n.default_locale && t[attribute] }
+
+        if t_locale.nil? && t_default.nil?
+          return self[attribute]
+        end
+        t_locale = t_locale[attribute]
+        t_default= t_default[attribute]
+
+        if t_locale.blank?
+          if t_default.blank?
+            return self[attribute]
+          else
+            return t_default
+          end
+        else
+          return t_locale
+        end
       end
 
       def update_real_data!
