@@ -63,8 +63,9 @@ module Puret
       end
 
       def get_value attribute
+
         # return previously setted attributes if present
-        return puret_attributes[I18n.locale][attribute] if !puret_attributes[I18n.locale][attribute].blank?
+        #return puret_attributes[I18n.locale][attribute] if !puret_attributes[I18n.locale][attribute].blank?
         return if new_record?
 
         # Lookup chain:
@@ -74,16 +75,21 @@ module Puret
 
         t_locale = translations.detect { |t| t.locale.to_sym == I18n.locale && t[attribute] }
         t_default= translations.detect { |t| t.locale.to_sym == I18n.default_locale && t[attribute] }
+        t_not_blank= translations.detect { |t| !t[attribute].blank? }
 
         if t_locale.nil? && t_default.nil?
           return self[attribute]
         end
 
         if t_locale.nil? || t_locale[attribute].blank?
-          if t_default.nil? || t_default[attribute].blank?
-            return self[attribute]
-          else
+          if !t_default.nil? && !t_default[attribute].blank?
             return t_default[attribute]
+          else
+            if self[attribute].blank? && !t_not_blank.nil?
+              return t_not_blank[attribute]
+            else
+              return self[attribute]
+            end
           end
         else
           return t_locale[attribute]
