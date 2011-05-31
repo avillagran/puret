@@ -25,12 +25,14 @@ module Puret
           # attribute setter
 
           define_method "#{attribute}=" do |value|
+            self[attribute] = value
             puret_attributes[I18n.locale][attribute] = value
           end
 
 
           # attribute getter
           define_method attribute do
+            return self[attribute]  if self.new_record?
             get_value attribute
           end
 
